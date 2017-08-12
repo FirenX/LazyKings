@@ -257,6 +257,33 @@ var senemy07 = new senemy("Dwarves", new Image(20, 20), 11, 52);
 var interval0;
 var interval1;
 
+function string2ArrayBuffer(str){
+    if(/[\u0080-\uffff]/.test(str)){
+        throw new Error("this needs encoding, like UTF-8");
+    }
+    var arr = new Uint8Array(str.length);
+    for(var i=str.length; i--; )
+        arr[i] = str.charCodeAt(i);
+    return arr.buffer;
+}
+
+function arrayBuffer2String(buffer){
+    var arr = new Uint8Array(buffer);
+    var str = String.fromCharCode.apply(String, arr);
+    if(/[\u0080-\uffff]/.test(str)){
+        throw new Error("this string seems to contain (still encoded) multibytes");
+    }
+    return str;
+}
+
+function copyBuffer(dest, src) {
+	var destArray = new Int16Array(dest);
+	var srcArray = new Int16Array(src);
+	for (var i=srcArray.length; i--; ) {
+		destArray[i] = srcArray[i];
+	}
+}
+
 function bigInt() {
 	this.data = new Int8Array(100);
 	this.data.fill(0);
@@ -6946,12 +6973,23 @@ function newGame() {
 	gameState[51986] = 1;
 }
 
-function saveGame() {
-	var temp = new Int16Array(gsbuffer);
-	localStorage.setItem("LazyKings00", String.fromCharCode.apply(null, temp));
+function getSaveObject() {
+	var a = {};
+	a.version = version;
+	a.gsbufferString = arrayBuffer2String(gsbuffer);
+	return btoa(JSON.stringify(a));
 }
 
-function loadGame() {
+/* function saveGame() {
+	var temp = new Int16Array(gsbuffer);
+	localStorage.setItem("LazyKings00", String.fromCharCode.apply(null, temp));
+} */
+
+function saveLocal() {
+	localStorage.setItem("LazyKings01", getSaveObject());
+}
+
+/* function loadGame() {
 	var temp = new Int16Array(gsbuffer);
 	var temp2 = localStorage["LazyKings00"];
 	if (temp2 != null) {
@@ -7062,6 +7100,10 @@ function loadGame() {
 		gameState[0] = 7;
 	}
 	postNew();
+} */
+
+function loadSaveObject(a) {
+	copyBuffer(gsbuffer, string2ArrayBuffer(a.gsbufferString).slice(0));
 }
 
 function submitscore() {
@@ -7336,7 +7378,13 @@ function start0() {
 	senemy06.image.src = "images/sresource10.png";
 	senemy07.image.src = "images/uenemy01.png";
 	gameState.fill(0);
-	loadGame();
+	var localSaveString = localStorage["LazyKings01"];
+	if (localSaveString != null) {
+		var localSaveObject = JSON.parse(atob(localSaveString));
+		if (localSaveObject != null) {
+			loadSaveObject(localSaveObject);
+		}
+	}
 	if (!gameState[11950]) {
 		var temp = new bigInt();
 		pullBig(temp, 15000);
@@ -8583,7 +8631,8 @@ function updateh() {
 	pushBig(totalpaladins, 16400);
 	if (savetimer == 0) {
 		if ((currentview < 50) || (currentview > 100)) {
-			saveGame();
+/* 			saveGame(); */
+			saveLocal();
 		}
 		savetimer = 60;
 	}
@@ -14458,8 +14507,8 @@ function userMove(event) {
 		confirmtimer2 = 0;
 	}
 	cmouseposition = event;
-	var x = event.pageX;
-	var y = event.pageY;
+	var x = (event != null ? event.pageX : 0);
+	var y = (event != null ? event.pageY : 0);
 	ehighlight = -1;
 	if ((y < 25) && ((currentview > 99) || (currentview < 50))) {
 		chighlight = -1;
@@ -18536,7 +18585,8 @@ function userClick(event) {
 	if ((y < 25) && ((currentview > 99) || (currentview < 50))) {
 		if (775 < x) {
 			currentview = 0;
-			saveGame();
+/* 			saveGame(); */
+			saveLocal();
 			savetimer = 60;
 			ihighlightt = 4;
 		} else if ((750 < x) && gameState[1000]) {
