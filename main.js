@@ -2,7 +2,7 @@ var canvas0 = document.getElementById("htmlcanvas");
 var context0 = canvas0.getContext("2d");
 var kongregate;
 var cmouseposition;
-var version;
+var version = "1.00";
 var gsbuffer = new ArrayBuffer(60000);
 var gameState = new Int8Array(gsbuffer);
 var currentview = 0;
@@ -7204,9 +7204,6 @@ function submitscore() {
 }
 
 function start0() {
-	kongregateAPI.loadAPI(function(){
-		window.kongregate = kongregateAPI.getAPI();
-	});
 	hbackground.src = "images/hbackground.jpg";
 	obackground.src = "images/obackground.jpg";
 	ebackground.src = "images/ebackground.jpg";
