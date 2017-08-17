@@ -257,6 +257,10 @@ var senemy07 = new senemy("Dwarves", new Image(20, 20), 11, 52);
 var interval0;
 var interval1;
 
+function get(a) {
+    return document.getElementById(a)
+}
+
 function string2ArrayBuffer(str){
     if(/[\u0080-\uffff]/.test(str)){
         throw new Error("this needs encoding, like UTF-8");
@@ -7106,6 +7110,82 @@ function loadSaveObject(a) {
 	copyBuffer(gsbuffer, string2ArrayBuffer(a.gsbufferString).slice(0));
 }
 
+function loadSaveString(str) {
+	if (str != null) {
+		var obj = JSON.parse(atob(str));
+		if (obj != null) {
+			loadSaveObject(obj);
+		}
+	}
+}
+
+function exportGame(a) {
+/* 	get("imex-code").setAttribute("readonly","true");
+	get("imex-code").innerHTML = getSaveObject();
+	get("imex-code").style.zIndex = "1";
+	get("okButton").style.zIndex = "1";
+	get("cancelButton").style.zIndex = "1";
+	get("htmlcanvas").style.zIndex = "0";
+	// get("imex-code").focus();
+	setTimeout(selectText,1000); */
+	var saveNumber = prompt("Pick a save number", "0")
+	download("LazyKings" + saveNumber + ".sav", getSaveObject());
+}
+
+function importGame() {
+/* 	get("imex-code").removeAttribute("readonly");
+	get("imex-code").innerHTML ="";
+	get("imex-code").style.zIndex = "1";
+	get("okButton").style.zIndex = "1";
+	get("cancelButton").style.zIndex = "1";
+	get("htmlcanvas").style.zIndex = "0"; */
+	if (get("saveFile").style.zIndex != "2") {
+		get("saveFile").style.zIndex = "2"
+	} else {
+		get("saveFile").style.zIndex = "0"
+	}
+}
+
+/* function okClicked() {
+	get("imex-code").style.zIndex = "0";
+	get("okButton").style.zIndex = "0";
+	get("cancelButton").style.zIndex = "0";
+	get("htmlcanvas").style.zIndex = "1";
+	loadSaveString(get("imex-code").innerHTML);
+}
+
+function cancelClicked() {
+	get("imex-code").style.zIndex = "0";
+	get("okButton").style.zIndex = "0";
+	get("cancelButton").style.zIndex = "0";
+	get("htmlcanvas").style.zIndex = "1";
+} */
+
+function fileSelected(event) {
+	var input = event.target;
+	var reader = new FileReader();
+	reader.onload=function(){loadSaveString(reader.result)};
+	reader.readAsText(input.files[0]);
+	get("saveFile").style.zIndex = "0";
+}
+
+function selectText() {
+	get("imex-code").select();
+}
+
+function download(filename, text) {
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+
+    document.body.removeChild(element);
+}
+
 function submitscore() {
 	var temp = new bigInt();
 	var temp1 = new bigInt();
@@ -7379,12 +7459,7 @@ function start0() {
 	senemy07.image.src = "images/uenemy01.png";
 	gameState.fill(0);
 	var localSaveString = localStorage["LazyKings01"];
-	if (localSaveString != null) {
-		var localSaveObject = JSON.parse(atob(localSaveString));
-		if (localSaveObject != null) {
-			loadSaveObject(localSaveObject);
-		}
-	}
+	loadSaveString(localSaveString);
 	if (!gameState[11950]) {
 		var temp = new bigInt();
 		pullBig(temp, 15000);
@@ -12098,6 +12173,10 @@ function updateview() {
 			context0.fillText("REALLY?!?!?", 596, 530);
 			confirmtimer2--;
 		}
+		context0.drawImage(button00, 50, 420, 200, 50);
+		context0.fillText("Export Save", 100, 450);
+		context0.drawImage(button00, 50, 500, 200, 50);
+		context0.fillText("Import Save", 100, 530);
 	} else if (currentview == 1) {
 		context0.fillStyle = "black";
 		context0.drawImage(hbackground, 0, 0, 800, 600);
@@ -14557,6 +14636,10 @@ function userMove(event) {
 				cmessage = "HARD RESET: RESETS EVERYTHING, INCLUDING ACHIEVEMENTS";
 			} else if ((550 < x) && (x < 750) && (500 < y) && (y < 550) && (confirmtimer2 != 0)) {
 				cmessage = "ARE YOU SURE? THIS WILL DELETE ALL YOUR ACHIEVEMENTS";
+			} else if ((50 < x) && (x < 250) && (420 < y) && (y < 470)) {
+				cmessage = "Export Save: Get gamestate as string.";
+			} else if ((50 < x) && (x < 250) && (500 < y) && (y < 550)) {
+				cmessage = "Import Save: Import gamestate from string.";
 			} else {
 				cmessage = "";
 			}
@@ -16795,6 +16878,10 @@ function userClick(event) {
 				hardReset();
 				confirmtimer2 = 0;
 			}
+		} else if ((50 < x) && (x < 250) && (420 < y) && (y < 470)) {
+			exportGame(selectText);
+		} else if ((50 < x) && (x < 250) && (500 < y) && (y < 550)) {
+			importGame();
 		}
 	} else if (currentview == 1) {
 		if (tutorialtimer == 5 || tutorialtimer <= 2 || (tutorialtimer == 4 && gameState[11950])) {
