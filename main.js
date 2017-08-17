@@ -7129,7 +7129,9 @@ function exportGame(a) {
 	// get("imex-code").focus();
 	setTimeout(selectText,1000); */
 	var saveNumber = prompt("Pick a save number", "0")
-	download("LazyKings" + saveNumber + ".sav", getSaveObject());
+	if (saveNumber != null)	{
+		download("LazyKings" + saveNumber + ".sav", getSaveObject());
+	}
 }
 
 function importGame() {
