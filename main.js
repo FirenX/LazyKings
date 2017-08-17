@@ -2,7 +2,7 @@ var canvas0 = document.getElementById("htmlcanvas");
 var context0 = canvas0.getContext("2d");
 var kongregate;
 var cmouseposition;
-var version;
+var version = "1.00";
 var gsbuffer = new ArrayBuffer(60000);
 var gameState = new Int8Array(gsbuffer);
 var currentview = 0;
@@ -256,6 +256,37 @@ var senemy06 = new senemy("Elephants", new Image(20, 20), 1, 96);
 var senemy07 = new senemy("Dwarves", new Image(20, 20), 11, 52);
 var interval0;
 var interval1;
+
+function get(a) {
+    return document.getElementById(a)
+}
+
+function string2ArrayBuffer(str){
+    if(/[\u0080-\uffff]/.test(str)){
+        throw new Error("this needs encoding, like UTF-8");
+    }
+    var arr = new Uint8Array(str.length);
+    for(var i=str.length; i--; )
+        arr[i] = str.charCodeAt(i);
+    return arr.buffer;
+}
+
+function arrayBuffer2String(buffer){
+    var arr = new Uint8Array(buffer);
+    var str = String.fromCharCode.apply(String, arr);
+    if(/[\u0080-\uffff]/.test(str)){
+        throw new Error("this string seems to contain (still encoded) multibytes");
+    }
+    return str;
+}
+
+function copyBuffer(dest, src) {
+	var destArray = new Int16Array(dest);
+	var srcArray = new Int16Array(src);
+	for (var i=srcArray.length; i--; ) {
+		destArray[i] = srcArray[i];
+	}
+}
 
 function bigInt() {
 	this.data = new Int8Array(100);
@@ -6946,12 +6977,23 @@ function newGame() {
 	gameState[51986] = 1;
 }
 
-function saveGame() {
-	var temp = new Int16Array(gsbuffer);
-	localStorage.setItem("LazyKings00", String.fromCharCode.apply(null, temp));
+function getSaveObject() {
+	var a = {};
+	a.version = version;
+	a.gsbufferString = arrayBuffer2String(gsbuffer);
+	return btoa(JSON.stringify(a));
 }
 
-function loadGame() {
+/* function saveGame() {
+	var temp = new Int16Array(gsbuffer);
+	localStorage.setItem("LazyKings00", String.fromCharCode.apply(null, temp));
+} */
+
+function saveLocal() {
+	localStorage.setItem("LazyKings01", getSaveObject());
+}
+
+/* function loadGame() {
 	var temp = new Int16Array(gsbuffer);
 	var temp2 = localStorage["LazyKings00"];
 	if (temp2 != null) {
@@ -7062,6 +7104,88 @@ function loadGame() {
 		gameState[0] = 7;
 	}
 	postNew();
+} */
+
+function loadSaveObject(a) {
+	copyBuffer(gsbuffer, string2ArrayBuffer(a.gsbufferString).slice(0));
+}
+
+function loadSaveString(str) {
+	if (str != null) {
+		var obj = JSON.parse(atob(str));
+		if (obj != null) {
+			loadSaveObject(obj);
+		}
+	}
+}
+
+function exportGame(a) {
+/* 	get("imex-code").setAttribute("readonly","true");
+	get("imex-code").innerHTML = getSaveObject();
+	get("imex-code").style.zIndex = "1";
+	get("okButton").style.zIndex = "1";
+	get("cancelButton").style.zIndex = "1";
+	get("htmlcanvas").style.zIndex = "0";
+	// get("imex-code").focus();
+	setTimeout(selectText,1000); */
+	var saveNumber = prompt("Pick a save number", "0")
+	if (saveNumber != null)	{
+		download("LazyKings" + saveNumber + ".sav", getSaveObject());
+	}
+}
+
+function importGame() {
+/* 	get("imex-code").removeAttribute("readonly");
+	get("imex-code").innerHTML ="";
+	get("imex-code").style.zIndex = "1";
+	get("okButton").style.zIndex = "1";
+	get("cancelButton").style.zIndex = "1";
+	get("htmlcanvas").style.zIndex = "0"; */
+	if (get("saveFile").style.zIndex != "2") {
+		get("saveFile").style.zIndex = "2"
+	} else {
+		get("saveFile").style.zIndex = "0"
+	}
+}
+
+/* function okClicked() {
+	get("imex-code").style.zIndex = "0";
+	get("okButton").style.zIndex = "0";
+	get("cancelButton").style.zIndex = "0";
+	get("htmlcanvas").style.zIndex = "1";
+	loadSaveString(get("imex-code").innerHTML);
+}
+
+function cancelClicked() {
+	get("imex-code").style.zIndex = "0";
+	get("okButton").style.zIndex = "0";
+	get("cancelButton").style.zIndex = "0";
+	get("htmlcanvas").style.zIndex = "1";
+} */
+
+function fileSelected(event) {
+	var input = event.target;
+	var reader = new FileReader();
+	reader.onload=function(){loadSaveString(reader.result)};
+	reader.readAsText(input.files[0]);
+	get("saveFile").style.zIndex = "0";
+}
+
+function selectText() {
+	get("imex-code").select();
+}
+
+function download(filename, text) {
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+
+    document.body.removeChild(element);
 }
 
 function submitscore() {
@@ -7204,9 +7328,6 @@ function submitscore() {
 }
 
 function start0() {
-	kongregateAPI.loadAPI(function(){
-		window.kongregate = kongregateAPI.getAPI();
-	});
 	hbackground.src = "images/hbackground.jpg";
 	obackground.src = "images/obackground.jpg";
 	ebackground.src = "images/ebackground.jpg";
@@ -7339,7 +7460,8 @@ function start0() {
 	senemy06.image.src = "images/sresource10.png";
 	senemy07.image.src = "images/uenemy01.png";
 	gameState.fill(0);
-	loadGame();
+	var localSaveString = localStorage["LazyKings01"];
+	loadSaveString(localSaveString);
 	if (!gameState[11950]) {
 		var temp = new bigInt();
 		pullBig(temp, 15000);
@@ -8586,7 +8708,8 @@ function updateh() {
 	pushBig(totalpaladins, 16400);
 	if (savetimer == 0) {
 		if ((currentview < 50) || (currentview > 100)) {
-			saveGame();
+/* 			saveGame(); */
+			saveLocal();
 		}
 		savetimer = 60;
 	}
@@ -12052,6 +12175,10 @@ function updateview() {
 			context0.fillText("REALLY?!?!?", 596, 530);
 			confirmtimer2--;
 		}
+		context0.drawImage(button00, 50, 420, 200, 50);
+		context0.fillText("Export Save", 100, 450);
+		context0.drawImage(button00, 50, 500, 200, 50);
+		context0.fillText("Import Save", 100, 530);
 	} else if (currentview == 1) {
 		context0.fillStyle = "black";
 		context0.drawImage(hbackground, 0, 0, 800, 600);
@@ -14461,8 +14588,8 @@ function userMove(event) {
 		confirmtimer2 = 0;
 	}
 	cmouseposition = event;
-	var x = event.pageX;
-	var y = event.pageY;
+	var x = (event != null ? event.pageX : 0);
+	var y = (event != null ? event.pageY : 0);
 	ehighlight = -1;
 	if ((y < 25) && ((currentview > 99) || (currentview < 50))) {
 		chighlight = -1;
@@ -14511,6 +14638,10 @@ function userMove(event) {
 				cmessage = "HARD RESET: RESETS EVERYTHING, INCLUDING ACHIEVEMENTS";
 			} else if ((550 < x) && (x < 750) && (500 < y) && (y < 550) && (confirmtimer2 != 0)) {
 				cmessage = "ARE YOU SURE? THIS WILL DELETE ALL YOUR ACHIEVEMENTS";
+			} else if ((50 < x) && (x < 250) && (420 < y) && (y < 470)) {
+				cmessage = "Export Save: Get gamestate as string.";
+			} else if ((50 < x) && (x < 250) && (500 < y) && (y < 550)) {
+				cmessage = "Import Save: Import gamestate from string.";
 			} else {
 				cmessage = "";
 			}
@@ -16749,6 +16880,10 @@ function userClick(event) {
 				hardReset();
 				confirmtimer2 = 0;
 			}
+		} else if ((50 < x) && (x < 250) && (420 < y) && (y < 470)) {
+			exportGame(selectText);
+		} else if ((50 < x) && (x < 250) && (500 < y) && (y < 550)) {
+			importGame();
 		}
 	} else if (currentview == 1) {
 		if (tutorialtimer == 5 || tutorialtimer <= 2 || (tutorialtimer == 4 && gameState[11950])) {
@@ -18539,7 +18674,8 @@ function userClick(event) {
 	if ((y < 25) && ((currentview > 99) || (currentview < 50))) {
 		if (775 < x) {
 			currentview = 0;
-			saveGame();
+/* 			saveGame(); */
+			saveLocal();
 			savetimer = 60;
 			ihighlightt = 4;
 		} else if ((750 < x) && gameState[1000]) {
